@@ -1,0 +1,225 @@
+#include<stdio.h>
+#include <stdlib.h>
+#include<math.h>
+int selection(float[],int);
+int crossover(int[],int[],int);
+int mutation(int[],int);
+void shuffle(int *, int);
+int calcDistance(int[],int[],int[],int);
+int findElement(int[],int,int);
+swap(int[],int,int);
+int recordDistance = INFINITY;
+
+void shuffle(int * array, int n)
+{
+    if (n > 1)
+    {
+        int i;
+        for (i = 0; i < n - 1; i++)
+        {
+          int j = i + rand() / (RAND_MAX / (n - i) + 1);
+          int t = array[j];
+          array[j] = array[i];
+          array[i] = t;
+        }
+    }
+}
+
+int calcDistance(int routers[],int a[],int cost[],int size)
+{
+int sum=0;
+for(int i=0;i<size-1;i++)
+{
+int routerAIndex=a[i];
+int routerA=routers[routerAIndex-1];
+int routerBIndex=a[i+1];
+int routerB=routers[routerBIndex-1];
+int d = cost[routerA-1]-cost[routerB-1];
+if(d<0)
+d=d*(-1);
+sum+=d;
+}
+return sum;
+}
+
+int findElement(int arr[], int n,int key)
+{
+	int i;
+	for (i = 0; i < n; i++)
+		if (arr[i] == key)
+			return i;
+
+	return -1;
+}
+
+swap(int a[],int i,int j)
+{
+int temp=a[i];
+a[i]=a[j];
+a[j]=temp;
+}
+
+int selection(float fitness[],int s)
+{
+float fsum=0.0;
+for(int i=0;i<s;i++)
+{
+fsum+=fitness[i];
+}
+int r;
+r=rand()%(int)fsum;
+float runningSum = 0.0;
+int index = 0;
+int lastAddedIndex = 0;
+while (runningSum < r) {
+runningSum += fitness[index];
+lastAddedIndex = index;
+index++;
+}
+return lastAddedIndex;
+}
+
+int crossover(int order_A[], int order_B[],int s)
+{
+int neworder[s];
+for(int i=0;i<s;i++)
+neworder[i]=0;
+int start=rand()%s;
+int end=(rand()%((s-start+1)))+start;
+printf("starting and ending index of first selected order to be in a child order are\t%d\tand\t%d",start,end);
+for(int i=start;i<=end;i++)
+{
+neworder[i]=order_A[i];
+}
+for(int i=0;i<s;i++)
+{
+int city =order_B[i];
+int position = findElement(neworder,s, city);
+if (position == - 1)
+{
+for(int j=0;j<s;j++)
+{
+if(neworder[j]==0)
+{
+neworder[j]=order_B[i];
+break;
+}
+}
+}
+else
+{
+neworder[i]=neworder[i];
+}
+}
+printf("\nordered route is\n");
+for(int i=0;i<s;i++)
+printf("\n%d",neworder[i]);
+printf("\n");
+mutation(neworder,s);
+}
+
+int mutation(int a[],int s)
+{
+int indexA=rand()%10;
+int indexB=(indexA+1)%10;
+swap(a,indexA,indexB);
+printf("\nmutate route is\n");
+for(int i=0;i<s;i++)
+printf("\n%d",a[i]);
+printf("\n");
+}
+
+int main()
+{
+int n;
+printf("enter the no of routers");
+scanf("%d",&n);
+int p[n];
+int routers[n];
+int cost[n];
+int pop[n][n];
+int a[n];
+int orderA[n];
+int orderB[n];
+int bestEver[n];
+float fitness[n];
+printf("enter the routers");
+for(int i=0;i<n;i++)
+scanf("%d",&routers[i]);
+printf("enter the weight/cost associated with each routers");
+for(int i=0;i<n;i++)
+scanf("%d",&cost[i]);
+int s=sizeof(routers)/sizeof(int);
+for(int i=0; i<n; i++)
+{
+a[i] = routers[i];
+}
+for(int i=0;i<n;i++)
+{
+shuffle(&a, s);
+for(int j=0; j<n; j++)
+{
+pop[i][j] = a[j];
+}
+}
+printf("\n%d shuffled routes for routers are:\n",n);
+for(int i=0;i<n;i++)
+{
+for(int j=0; j<n; j++){
+printf("%d\t", pop[i][j]);
+}
+printf("\n");
+}
+for(int i=0;i<n;i++){
+for(int j=0;j<n;j++)
+{
+p[j]=pop[i][j];
+}
+int d=calcDistance(routers,p,cost,s);
+if(d<recordDistance)
+{
+recordDistance=d;
+for(int i=0;i<n;i++)
+{
+bestEver[i]=p[i];
+}
+}
+fitness[i]=(float)1/(d+1);
+printf("fitness and record distance of %d row shuffle is:\tFITNESS VALUE :\t%f\tRECORDED DISTANCE\t%d\n",i,fitness[i],recordDistance);
+}
+printf("\n");
+float fsum=0.0;
+for(int i=0;i<n;i++)
+{
+fsum+=fitness[i];
+}
+for(int i=0;i<n;i++)
+{
+fitness[i]=fitness[i]/fsum*100;
+printf("Normalized fitness value of %d row shuffle is:\t%f\n",i,fitness[i]);
+}
+printf("\n");
+int sel0=selection(fitness,s);
+for(int i=0;i<n;i++)
+{
+orderA[i]=pop[sel0][i];
+}
+int sel1=selection(fitness,s);
+printf("selection 1 index\t%d\nFirst Selected array is\n",sel1);
+for(int i=0;i<n;i++)
+{
+orderA[i]=pop[sel1][i];
+printf("%d\t\n",orderA[i]);
+}
+printf("\n");
+int sel2=selection(fitness,s);
+printf("selection 2 index\t%d\nSecond Selected array is\n",sel2);
+for(int i=0;i<n;i++)
+{
+orderB[i]=pop[sel2][i];
+printf("%d\t\n",orderB[i]);
+}
+printf("\n");
+crossover(orderA,orderB,n);
+}
+ 
